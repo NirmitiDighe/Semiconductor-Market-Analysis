@@ -1,0 +1,163 @@
+---
+title: "R_Project"
+author: "Nirmiti Dighe"
+date: "2024-11-18"
+output: html_document
+---
+### Introduction
+
+The data contains top semiconductor companies in the world with their rank, country, sector, market capitalization, and industry details. The data provided is used in analyzing the market capitalization of different countries and their relation with the respective country, industry and rank. The analysis helps us determine how the semiconductor companies in different countries are distributed, the mean market capitalization of different countries, determining which company in specific country performance compared to other countries.  The dataset contains 358 observations with 6 columns. The market capitalization being in trillions the analyzing is performed in billions to interpret the results and communicate it effectively.
+
+The questions analyzed are:
+
+1. The distribution of companies among different countries, sectors.
+
+2. If there is any correlation between rank and market capitalization. 
+
+3. Significant difference in market capitalization across countries. 
+
+4. Are Country and Industry independent
+
+##### Importing the dataset: 
+
+```{r}
+semiconductor_companies<-read.csv("D:/Semester - 3/Computer applications in statistics/Semiconductor/Top_Semiconductors_Companies.csv")
+```
+
+
+##### Data Cleaning:
+
+```{r}
+names(semiconductor_companies)[3] <- "Market_Cap_USD"
+class(semiconductor_companies$Market_Cap_USD)
+semiconductor_companies$Market_Cap_USD <- gsub(",", "", semiconductor_companies$Market_Cap_USD)
+semiconductor_companies$Market_Cap_USD<-as.numeric(semiconductor_companies$Market_Cap_USD)
+head(semiconductor_companies$Market_Cap_USD)
+semiconductor_companies<-na.omit(semiconductor_companies)
+sum(is.na(semiconductor_companies))
+```
+
+##### Scaling down the market capitalization column to analyze the data coloumn in billions. 
+
+```{r}
+semiconductor_companies$billions <- semiconductor_companies$Market_Cap_USD / 1e9
+```
+
+```{r}
+country_distribution<-table(semiconductor_companies$Country)
+country_distribution
+par(mar = c(7, 4, 4, 2) + 0.3)
+barplot(country_distribution, las=3,cex.names=0.7, main="Distribution of companies among different countries")
+```
+
+We can interpret that Taiwan has a highest count of semiconductor companies compared to other countries followed by United States having a count of 60. The bar plot visualizes that Taiwan has the highest number of semiconductor companies followed by United States and China. It also visualizes the distribution of companies in other countries such as Australia, Belgium etc showcasing that the distribution is not large in countries like Sweden, Norway, United Kingdom. 
+
+
+```{r}
+hist(semiconductor_companies$billions)
+```
+
+The graphs visualizes the market capitalization of semiconductor companies in billions of USD. According to the graph, large frequency of semiconductor companies are in the benchmark of 0 to 200 Billion USD with very few companies having a higher market capitalization. 
+
+
+```{r}
+cor(semiconductor_companies$Rank,semiconductor_companies$billions)
+```
+There is a weak negative correlation between the rank of semiconductor company and its market capitalization. This is a weak negative linear relationship which suggests that as the rank increases the market capitalization for the respective semi-conductor companies decreases. Therefore lower ranks demonstrates that the semiconductor comapnies have a higher market capitalizations. 
+
+##Average market capitalization is greater than a certain threshold for United States and Taiwan. TWO SAMPLE T-TEST
+
+
+```{r}
+Taiwan_companies <-semiconductor_companies[semiconductor_companies$Country == "Taiwan", ]
+USA_Companies <- semiconductor_companies[semiconductor_companies$Country == "United States", ]
+
+```
+
+```{r}
+t.test(USA_Companies$billions,Taiwan_companies$billions,var.equal = TRUE)
+```
+The t-value is 3.1428 and p-value being 0.001902, considering alpha=0.05 the p-value obtained is less than the alpha value thus demonstrating statistically significant difference in the average market capitalization of companies in the USA with those in Taiwan. There is a 95% confidence interval for difference in mean ranges from 16.404 to 71.56 billion USD which is higher than the Taiwan companies. Therefore, stating that US companies have a higher market value as compared to Taiwanese companies.
+
+H0: There is no difference in the average market capitalization between USA and Taiwan companies
+
+H1: There is a a difference in the average market capitalization between USA and Taiwan companies.
+
+Based on the obtained p-value, being less than the alpha value. Reject the null hypothesis. Sufficient evidence to conclude that there is a difference in the average market capitalization between USA and Taiwan companies. 
+
+
+```{r}
+semiconductor_companies$Country <- as.factor(semiconductor_companies$Country)
+anova_test_country<-aov(billions ~ Country, data=semiconductor_companies)
+summary(anova_test_country)
+```
+
+
+## Performing chi-square test 
+```{r}
+chisq.test(table(semiconductor_companies$Country, semiconductor_companies$Industry),correct=FALSE)
+```
+H0: Country and Industry are independent. 
+
+H1: Country and Industry are dependent. 
+
+p-value is less than the alpha value 0.05 therefore reject the null hypothesis. Sufficient evidence to conclude Country and Industry are dependent. 
+
+
+```{r}
+shapiro.test(USA_Companies$billions)
+shapiro.test(Taiwan_companies$billions)
+```
+
+H0: The data is normally distributed. 
+
+H1: The data is not normally distributed.
+The p-values obtained for the data are less than the alpha value 0.01 which states to reject the null hypothesis. Sufficient evidence to conclude that the data is not normally distributed. 
+
+
+```{r}
+library(car)
+leveneTest(billions ~ Country, data = semiconductor_companies)
+```
+H0: The data has equal variances. 
+
+H1: The data does not have equal variances. 
+
+We are unable to reject the null hypothesis since the test's p-value of 0.8003 is much higher than the alpha level of 0.01. insufficient evidence to conclude that there are differences in the variances among the different groups. Thus, it suggests that the variances of market capitalizations among semiconductor companies across various countries are statistically similar.
+
+
+```{r}
+plot(semiconductor_companies$Rank, semiconductor_companies$billions, 
+     main = "Market Cap vs Rank",
+     xlab = "Rank", 
+     ylab = "Market Capitalization (Billions)",
+     pch = 19, 
+     col = 'blue')
+abline(lm(billions ~ Rank, data = semiconductor_companies), col = "red")
+```
+
+The graphs shows that the data there is a negative linear relationship between Rank and Market Capitalization. 
+
+
+### Discussion
+
+Conclusion: 
+
+The highest number of semiconductor companies are located in Taiwan followed by United States. The market capitalization of these countries companies details us that even though the number of companies are higher in Taiwan as compared to United States, the average market capitalization is higher in United States, which gives us an idea that the higher market capitalization of semiconductor companies does not depend on the count of the companies in a specific country. As the rank increases the market capitalization decreases therefore it states that lower the rank higher the market capitalization. Majority of the companies have a market capitalization between 0 to 200 Billion with very few exceeding 200 Billion.
+
+Limitations: 
+
+We can transform the data to make it a normal distribution to have more precise results. The data can be transformed and warnings can be avoided and therefore the data conclusions can vary. Can enhance the analyzing by further proceeding with further regression analysis.
+
+Future Research:
+
+Further research can include analyzing on aspects of company size, the profits they earn and the technology advancements they are currently into. The industry specific changes that these companies make. 
+
+
+
+
+
+
+
+
+
